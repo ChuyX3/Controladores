@@ -86,9 +86,6 @@ function moveDown()
 async function startExperiment()
 {
     samples = [];
-    const payload = {
-        profile: profile
-    };
 
     await fetch("/start",
         {
@@ -97,7 +94,7 @@ async function startExperiment()
             {
                 "Content-Type":"application/json"
             },
-            body:JSON.stringify(payload)
+            body:JSON.stringify(profile)
         }
     );
 
@@ -105,31 +102,34 @@ async function startExperiment()
         eventSource.close();
     }
 
-    eventSource = new EventSource("/events");
-    eventSource.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        samples.push(data);
-        document.getElementById("tValue").textContent = data.t;
-        document.getElementById("uValue").textContent = data.u;
-        document.getElementById("yValue").textContent = data.y;
-        document.getElementById("statusText").textContent = "Ejecutando";
-    };
+    eventSource = new EventSource("/sample");
 
     eventSource.addEventListener(
-        "finished",
-        function()
+        "newdata",
+        function(event)
         {
-            finishExperiment();
+            const data = JSON.parse(event.data);
+            samples.push(data);
+            document.getElementById("tValue").textContent = data.t;
+            document.getElementById("uValue").textContent = data.u;
+            document.getElementById("yValue").textContent = data.y;
+            document.getElementById("statusText").textContent = "Ejecutando";
+        }
+    );
+
+    eventSource.addEventListener(
+        "statechanged",
+        function(event) {
+            const data = JSON.parse(event.data);
+            if(data.State === 3) {   // Waiting
+                finishExperiment();
+            }
         });
 }
 
 async function endExperiment()
 {
-    await fetch(
-        "/end",
-        {
-            method:"POST"
-        });
+    await fetch("/stop");
 
     finishExperiment();
 }
@@ -199,4 +199,4 @@ function onLoad()
     document.getElementById("endBtn").addEventListener("click", endExperiment);
 }
 
-window.onload=onLoad();
+window.onload=onLoad;

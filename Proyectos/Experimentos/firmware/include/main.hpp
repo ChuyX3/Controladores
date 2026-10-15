@@ -75,7 +75,7 @@ namespace Coffee
         std::pair<String, double> sampleData[3];
         std::queue<std::pair<uint32_t, double>> profileBack;
         std::queue<std::pair<uint32_t, double>> profileFront;
-        ExperimentState experimentState = ExperimentState::Initializing;
+        ExperimentState experimentState = ExperimentState::Waiting;
 
     public: /* Experiment */
 
