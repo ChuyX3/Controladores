@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+      <meta charset="UTF-8">
+      <title>Experimento</title>
+      <link rel="stylesheet" href="styles.css">
+  </head>
+<body>
+  <h1>Experimento</h1>
+  <div class="panel">
+      <div class="input-row">
+        <div>
+          <label>Tiempo (ms)</label>
+          <input
+              id="timeInput"
+              type="number"
+              min="0"
+              step="1">
+        </div>
+        <div>
+          <label>Valor</label>
+          <input
+              id="valueInput"
+              type="number"
+              step="0.001">
+        </div>
+      </div>
+      <div class="buttons">
+        <button id="insertBtn" class="add">➕</button>
+        <button id="removeBtn" class="remove">➖</button>
+        <button id="upBtn">▲</button>
+        <button id="downBtn">▼</button>
+      </div>
+      <div class="editor">
+        <select
+          id="pointList"
+          size="15">
+        </select>
+        
+      </div>
+  </div>
+  <div class="actions">
+      <button id="startBtn" class="start">
+        START
+      </button>
+      <button id="endBtn" class="stop">
+        END
+      </button>
+  </div>
+  <div class="status">
+      <h3>Estado</h3>
+      <p id="statusText">
+        Detenido
+      </p>
+  </div>
+  <div class="realtime">
+      <h3>Última muestra</h3>
+      <p>T = <span id="tValue">0</span></p>
+      <p>U = <span id="uValue">0</span></p>
+      <p>Y = <span id="yValue">0</span></p>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
