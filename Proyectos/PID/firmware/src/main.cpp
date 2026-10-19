@@ -15,14 +15,14 @@
  */
 
 #include <Arduino.h>
-#include "main.hpp"
+#include "main.h"
 
 Coffee::Main app;
 void setup() {
-  app.setup();
+  app.init();
 }
 
 void loop() {
-  app.loop();
+  app.run();
 }
 

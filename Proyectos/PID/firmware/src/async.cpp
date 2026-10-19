@@ -85,3 +85,44 @@ void Event::Signal()const
 {
     pthread_cond_broadcast(&m_handle); 
 }
+
+
+
+Dispatcher::~Dispatcher()
+{
+    auto locker = m_mutex.ScopeLocker();
+    while(m_queue.size() > 0)
+        m_queue.pop();
+}
+
+void Dispatcher::init()
+{
+    // Clear the task queue before starting the async worker
+    auto locker = m_mutex.ScopeLocker();
+    while(m_queue.size() > 0)
+        m_queue.pop();
+}
+
+void Dispatcher::update()
+{
+    method_t method;
+    auto locker = m_mutex.ScopeLocker();
+    while (m_queue.size() > 0) {
+        method = std::move(m_queue.front());
+        m_queue.pop();
+        m_mutex.Unlock();
+        try {
+            method();
+        }
+        catch (...) {
+        }
+        m_mutex.Lock();
+    }
+}
+
+void Dispatcher::postTask(method_t method)
+{
+    m_mutex.Sync([&]() {
+        m_queue.push(std::move(method));
+    });
+}
