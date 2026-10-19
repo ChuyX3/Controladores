@@ -15,33 +15,34 @@
  */
 
 #pragma once
-#include <Arduino.h>
-#include <stdint.h>
+
+#include "coffee.h"
+#include "coffee/async/mutex.h"
+
+#include <queue>
+#include <functional>
 
 namespace Coffee
 {
-    struct Encoder
+    namespace Async
     {
-        Encoder();
+        struct Dispatcher {
+			using method_t = std::function<void()>;
 
-        void begin(uint32_t pinA, uint32_t pinB);
-        void write(int64_t value);
-        int64_t read()const ;
+			Dispatcher() = default;
+			Dispatcher(const Dispatcher&) = delete;
+			Dispatcher& operator=(const Dispatcher&) = delete;
 
-    private:
-        inline uint8_t update() {
-            m_state = m_state >> 2;
-            m_state |= gpio_get_level((gpio_num_t)m_pinA)? B0100 : B0000;
-            m_state |= gpio_get_level((gpio_num_t)m_pinB)? B1000 : B0000;
-            return m_state;
-        }
-        mutable portMUX_TYPE  m_mux;
-        volatile int64_t m_position;
-        volatile uint8_t m_state;
-        uint8_t m_pinA;
-        uint8_t m_pinB;
+			~Dispatcher();
 
-    private:
-        static void onPinChanged(void*);
-    };
+		public:
+			void init();
+			void update();
+			void postTask(method_t method);
+			
+		private:
+			Mutex m_mutex;
+			std::queue<method_t> m_queue;
+		};
+    }
 }

@@ -24,7 +24,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include <type_traits>
-#include "utils/defines.h"
+#include "coffee/utils/defines.h"
 
 typedef size_t index_t;
 

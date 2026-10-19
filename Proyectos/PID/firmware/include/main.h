@@ -16,7 +16,7 @@
 
 #pragma once
 #include "entry.h"
-#include "encoder.h"
+#include "coffee/control/encoder.h"
 #include "motor.h"
 
 namespace Coffee
@@ -37,9 +37,10 @@ namespace Coffee
         Encoder encoder;
         Motor motor;
 
+        double lastPosition = 0.0;
         uint64_t leftTime = 0;
         uint64_t sampleCount = 0;
-        std::pair<String, double> sampleData[3];
+        std::pair<String, double> sampleData[5];
         std::queue<std::pair<uint32_t, double>> profileBack;
         std::queue<std::pair<uint32_t, double>> profileFront;
 
@@ -50,9 +51,15 @@ namespace Coffee
             sampleData[0].second = 0.0;
             sampleData[1].first = "u";
             sampleData[1].second = 0.0;
-            sampleData[2].first = "y";
+            sampleData[2].first = "y1";
             sampleData[2].second = 0.0;
+            sampleData[3].first = "y2";
+            sampleData[3].second = 0.0;
+            sampleData[4].first = "y3";
+            sampleData[4].second = 0.0;
 
+            encoder.setScale(1.0);
+            encoder.setOffset(0.0);
             encoder.begin(ENCODER_A, ENCODER_B);
             motor.setup(MOTOR_ENABLE, MOTOR_LEFT_PWM, MOTOR_RIGHT_PWM, -12.0, 12.0);
             stepTimer.begin(1000); // 1 ms step time
@@ -67,7 +74,7 @@ namespace Coffee
                 stepTimer.reset();
                 motor.set(0);
                 motor.start();
-                encoder.write(0);
+                encoder.reset(0);
                 sampleCount = 0;
                 leftTime = 0;
                 setControllerState(ControllerState::Running);
@@ -91,14 +98,18 @@ namespace Coffee
                         setControllerState(ControllerState::Stopping);
                         return;
                     }
-
+                    
                     //Fill sample data
                     sampleData[0].second = stepTimer.deltaTime() * sampleCount;
                     sampleData[1].second = motor.get();
-                    sampleData[2].second = encoder.read();
+                    sampleData[2].second = encoder.position();
+                    /*comparative speed based on position change: (position change) / deltaTime*/
+                    sampleData[3].second = encoder.speed(); /*first: position-change / time between changes */
+                    sampleData[4].second = (encoder.position() - lastPosition) / stepTimer.deltaTime();   /*second: position change / fixed deltaTime */
+                    lastPosition = encoder.position();
                     sampleCount++;
 
-                    postNewSample(sampleData, 3);
+                    postNewSample(sampleData, 5);
                 });
                 break;
 

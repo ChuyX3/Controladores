@@ -1,3 +1,4 @@
+
 /* 
  * Copyright (c) 2023 Jesus Angel Rocha Morales.
  * 
@@ -14,8 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Arduino.h>
-#include "encoder.h"
+#include "coffee/control/encoder.h"
 
 using namespace Coffee;
 
@@ -45,7 +45,10 @@ using namespace Coffee;
 void IRAM_ATTR Encoder::onPinChanged(void* args) {
     auto encoder = reinterpret_cast<Encoder*>(args);
     uint8_t state = encoder->update();
-     portENTER_CRITICAL_ISR(&encoder->m_mux);
+    portENTER_CRITICAL_ISR(&encoder->m_mux);
+    encoder->m_prevPosition = encoder->m_position;
+    encoder->m_prevTime = encoder->m_time;
+    encoder->m_time = esp_timer_get_time();
     switch (state)
     {
     case B0001: case B0111: case B1000: case B1110:
@@ -70,6 +73,8 @@ Encoder::Encoder()
     , m_pinA(0)
     , m_pinB(0)
     , m_state(0)
+    , m_offset(0.0)
+    , m_scale(1.0)
 {
 }
 
@@ -89,16 +94,44 @@ void Encoder::begin(uint32_t pinA, uint32_t pinB)
     attachInterruptArg(digitalPinToInterrupt(m_pinB), &Encoder::onPinChanged, this, CHANGE);
 }
 
-void Encoder::write(int64_t value) { /*degrees*/
+void Encoder::reset(int64_t value) { /*degrees*/
     portENTER_CRITICAL(&m_mux);
-    m_position = value; 
+    m_position = value;
+    m_prevPosition = value;
+    m_time = esp_timer_get_time();
+    m_prevTime = m_time;
     portEXIT_CRITICAL(&m_mux);
 }
 
-int64_t Encoder::read()const { /*degrees*/
+Analog<double> Encoder::position()const { /*degrees*/
     portENTER_CRITICAL(&m_mux);
-    auto res = m_position; 
+    Analog<double> result((double)m_position, m_scale, m_offset);
     portEXIT_CRITICAL(&m_mux);
+    return result;
+}
+
+Analog<double> Encoder::speed()const { /*degrees*/
+    portENTER_CRITICAL(&m_mux);
+    double deltaTime = coffee::max(1e6 *(double)(m_time - m_prevTime), 1e-6); // Prevent division by zero
+    Analog<double> result((double)(m_position - m_prevPosition) / deltaTime, m_scale, 0);
+    portEXIT_CRITICAL(&m_mux);
+    return result;
+}
+
+void Encoder::setOffset(double offset) {
+    m_offset = offset;
+}
+
+double Encoder::getOffset()const {
+    auto res = m_offset;
     return res;
 }
 
+void Encoder::setScale(double scale) {
+    m_scale = scale;
+}
+
+double Encoder::getScale()const {
+    auto res = m_scale;
+    return res;
+}

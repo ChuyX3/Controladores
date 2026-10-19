@@ -16,126 +16,12 @@
 
 #pragma once
 
-#include "coffee.h"
-#include <pthread.h>
-#include <queue>
-#include <functional>
+#include "pid.h"
+#include "coffee/async/mutex.h"
+#include "coffee/async/dispatcher.h"
 
 namespace Coffee
 {
-    namespace Async
-    {
-        template<typename MutexT> struct ScopeLocker;
-
-        struct Mutex
-		{
-		private: //Non copiable
-			Mutex(const Mutex&) = delete;
-			Mutex& operator = (const Mutex&) = delete;
-            
-        protected:
-            mutable pthread_mutex_t m_handle;
-
-		public:
-			Mutex(bool lock = false);
-			~Mutex();
-
-		public: //Properties
-			void Lock()const;
-			bool TryLock()const;
-			void Unlock()const;
-
-			Async::ScopeLocker<Mutex> ScopeLocker()const;
-			template<typename FNType> auto Sync(FNType&& func)const -> decltype(static_cast<FNType&&>(func)());
-			friend struct Event;
-		};
-
-        struct Event
-		{
-		private: //Non copiable
-			Event(const Event&) = delete;
-			Event& operator = (const Event&) = delete;
-
-		protected:
-            mutable pthread_cond_t m_handle;
-
-		public:
-			Event();
-			~Event();
-
-		public: //Properties
-			void Wait(Mutex const& mutex)const;
-			bool Wait(Mutex const& mutex, unsigned long ms)const;
-			void Signal()const;
-
-			template<typename FNType>
-			void WaitFor(Mutex const& mutex, FNType cond)const {
-				while (!cond()) { Wait(mutex); }
-			}
-
-			template<typename FNType>
-			bool WaitFor(Mutex const& mutex, unsigned long ms, FNType cond)const {
-				if (!cond()) { Wait(mutex, ms); }
-				return cond();
-			}
-		};
-
-		template<> struct ScopeLocker<Mutex> final
-		{
-		private:
-			Mutex const* m_mutex;
-
-		public:
-			inline ScopeLocker(Mutex const& m) : m_mutex(&m) {
-				m_mutex->Lock();
-			}
-			inline ScopeLocker(ScopeLocker&& m) : m_mutex(nullptr) {
-				m_mutex = m.m_mutex;
-				m.m_mutex = nullptr;
-			}
-			inline ~ScopeLocker() {
-				if (m_mutex)m_mutex->Unlock();
-				m_mutex = nullptr;
-			}
-
-			template<typename FNType>
-			static auto lock(Mutex& m, FNType func) -> decltype(func())
-			{
-				ScopeLocker _lock = m;
-				return func();
-			}
-		};
-
-		inline ScopeLocker<Mutex> Mutex::ScopeLocker()const {
-			return Async::ScopeLocker<Mutex>(*this);
-		}
-
-		template<typename FNType>
-		inline auto Mutex::Sync(FNType&& func)const -> decltype(static_cast<FNType&&>(func)()) {
-			auto scope = this->ScopeLocker();
-			return static_cast<FNType&&>(func)();
-		}
-
-		struct Dispatcher {
-			using method_t = std::function<void()>;
-
-			Dispatcher() = default;
-			Dispatcher(const Dispatcher&) = delete;
-			Dispatcher& operator=(const Dispatcher&) = delete;
-
-			~Dispatcher();
-
-		public:
-			void init();
-			void update();
-			void postTask(method_t method);
-			
-		private:
-			Mutex m_mutex;
-			std::queue<method_t> m_queue;
-		};
-    }
-
 	template<typename Subclass>
 	struct AsyncWorker {
 		using self = Subclass;

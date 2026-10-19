@@ -15,8 +15,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Arduino.h>
-#include "async.h"
+#include "coffee/async/mutex.h"
+#include "coffee/async/events.h"
+#include "coffee/async/dispatcher.h"
 
 using namespace Coffee;
 using namespace Coffee::Async;
@@ -33,7 +34,7 @@ static struct pthread_mutexattr_type
 Mutex::Mutex(bool lock)
 {
     pthread_mutex_init(&m_handle, &s_attr.attr);
-    if(lock) this->Lock();
+    if(lock) this->lock();
 }
 
 Mutex::~Mutex()
@@ -41,17 +42,17 @@ Mutex::~Mutex()
     pthread_mutex_destroy(&m_handle);
 }
 
-void Mutex::Lock()const
+void Mutex::lock()const
 {
     pthread_mutex_lock(&m_handle);
 }
 
-bool Mutex::TryLock()const
+bool Mutex::tryLock()const
 {
     return pthread_mutex_trylock(&m_handle) == 0;
 }
 
-void Mutex::Unlock()const
+void Mutex::unlock()const
 {
     pthread_mutex_unlock(&m_handle);
 }
@@ -68,12 +69,12 @@ Event::~Event()
     pthread_cond_destroy(&m_handle);
 }
 
-void Event::Wait(Mutex const& mutex)const
+void Event::wait(Mutex const& mutex)const
 {
     pthread_cond_wait(&m_handle, &mutex.m_handle);
 }
 
-bool Event::Wait(Mutex const& mutex, unsigned long ms)const
+bool Event::wait(Mutex const& mutex, unsigned long ms)const
 {
     timespec time;
     time.tv_sec = ms/1000;
@@ -81,16 +82,17 @@ bool Event::Wait(Mutex const& mutex, unsigned long ms)const
     return pthread_cond_timedwait(&m_handle, &mutex.m_handle, &time) == 0;
 }
 
-void Event::Signal()const
+void Event::signal()const
 {
     pthread_cond_broadcast(&m_handle); 
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////
 
 Dispatcher::~Dispatcher()
 {
-    auto locker = m_mutex.ScopeLocker();
+    auto locker = m_mutex.scopeLocker();
     while(m_queue.size() > 0)
         m_queue.pop();
 }
@@ -98,7 +100,7 @@ Dispatcher::~Dispatcher()
 void Dispatcher::init()
 {
     // Clear the task queue before starting the async worker
-    auto locker = m_mutex.ScopeLocker();
+    auto locker = m_mutex.scopeLocker();
     while(m_queue.size() > 0)
         m_queue.pop();
 }
@@ -106,23 +108,23 @@ void Dispatcher::init()
 void Dispatcher::update()
 {
     method_t method;
-    auto locker = m_mutex.ScopeLocker();
+    auto locker = m_mutex.scopeLocker();
     while (m_queue.size() > 0) {
         method = std::move(m_queue.front());
         m_queue.pop();
-        m_mutex.Unlock();
+        m_mutex.unlock();
         try {
             method();
         }
         catch (...) {
         }
-        m_mutex.Lock();
+        m_mutex.lock();
     }
 }
 
 void Dispatcher::postTask(method_t method)
 {
-    m_mutex.Sync([&]() {
+    m_mutex.sync([&]() {
         m_queue.push(std::move(method));
     });
 }

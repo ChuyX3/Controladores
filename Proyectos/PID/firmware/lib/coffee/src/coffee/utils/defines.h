@@ -41,7 +41,7 @@
 		40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,\
 		20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0
 
-#include "utils/inline/utils_join.inl"
+#include "coffee/utils/inline/utils_join.inl"
 
 #define COFFEE_JOIN_AB_(__A__, __B__) __A__##__B__
 #define COFFEE_JOIN_AB(__A__, __B__) COFFEE_JOIN_AB_(__A__, __B__)
@@ -50,7 +50,7 @@
 
 /********************************************************************************************************************************************/
 
-#include "utils/inline/utils_apply.inl"
+#include "coffee/utils/inline/utils_apply.inl"
 
 #define COFFEE_APPLY_FUNCX_(FUNCX, SEPARATOR, M, ...) COFFEE_EXPAND(M(FUNCX,SEPARATOR,__VA_ARGS__))
 #define COFFEE_APPLY_FUNCX_N(FUNCX, SEPARATOR, ...) COFFEE_EXPAND(COFFEE_APPLY_FUNCX_(FUNCX,SEPARATOR,COFFEE_JOIN_AB(COFFEE_APPLY_FUNCX,COFFEE_NUM_ARGS(__VA_ARGS__)),__VA_ARGS__))
@@ -70,7 +70,7 @@
 
 /********************************************************************************************************************************************/
 
-#include "utils/inline/utils_last.inl"
+#include "coffee/utils/inline/utils_last.inl"
 
 #define COFFEE_LAST(...) COFFEE_EXPAND(COFFEE_JOIN_AB(COFFEE_LAST, COFFEE_NUM_ARGS(__VA_ARGS__))(__VA_ARGS__))
 #define COFFEE_NO_LAST(...) COFFEE_EXPAND(COFFEE_JOIN_AB(COFFEE_NO_LAST, COFFEE_NUM_ARGS(__VA_ARGS__))(__VA_ARGS__))

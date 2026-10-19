@@ -16,7 +16,8 @@
 
 #pragma once
 #include <Arduino.h>
-#include "utils.h"
+#include "coffee.h"
+#include "coffee/steptimer.h"
 
 namespace Coffee
 {

@@ -15,7 +15,7 @@
  */
 
 #pragma once
-#include "coffee.h"
+#include "pid.h"
 
 #include <Wire.h>
 #include <SPI.h>
@@ -28,7 +28,6 @@
 #include <ESPAsyncWebServer.h>
 
 #include "async.h"
-#include "steptimer.h"
 
 namespace Coffee
 {
