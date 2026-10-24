@@ -25,17 +25,18 @@ namespace Coffee
     {
         Motor();
 
-        void setup(uint8_t pinEnable, uint8_t pinLeftPWM, uint8_t pinRightPWM, double minValue = -12.0, double maxValue = 12.0);
+        int setup(uint8_t pinEnable, uint8_t pinLeftPWM, uint8_t pinRightPWM, double minValue = -12.0, double maxValue = 12.0);
         
-        void start();
+        void start(double value = 0.0);
         void set(double value);
         double get()const;
         void stop();
 
     private:
-        enum{
+        enum : uint32_t {
             frequency = 5000,
             resolution = 10,
+            maxDuty = (1ul << resolution) - 1
         };
         static int s_channel;
         double m_value;

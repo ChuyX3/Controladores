@@ -38,20 +38,22 @@ namespace Coffee
 
 		using KindE = typename KindBase::EnumType;
 
-		struct ValueBase
+		struct CategoryBase /*category of value types*/
 		{
 			enum EnumType : uint8_t
 			{
 				Bool = 0,
 				Char,
-				Signed,
+				Enum,
 				Unsigned,
+				Signed,
 				Float,
 				Pointer,
+				None = 0XFF /*none value types*/
 			};
 		};
 		
-		using ValueE = typename ValueBase::EnumType;
+		using CategoryE = typename CategoryBase::EnumType;
 	}
 }
 
@@ -604,6 +606,70 @@ COFFEE_NAMESPACE_END(Coffee, implement)
 COFFEE_NAMESPACE_BEGIN(Coffee, implement)
 COFFEE_NAMESPACE_BEGIN(details)
 template<typename T
+	, bool = is_bool<T>::value
+	, bool = is_char<T>::value
+	, bool = is_enum<T>::value
+	, bool = is_unsigned<T>::value
+	, bool = is_signed<T>::value
+	, bool = is_float<T>::value
+	, bool = is_pointer<T>::value
+	>
+struct coffee_details_category {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::None;
+};
+
+template<typename T, bool N1, bool N2, bool N3, bool N4, bool N5, bool N6>
+struct coffee_details_category<T, true, N1, N2, N3, N4, N5, N6> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Bool;
+};
+
+template<typename T, bool N1, bool N2, bool N3, bool N4, bool N5>
+struct coffee_details_category<T, false, true, N1, N2, N3, N4, N5> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Char;
+};
+
+template<typename T, bool N1, bool N2, bool N3, bool N4>
+struct coffee_details_category<T, false, false, true, N1, N2, N3, N4> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Enum;
+};
+
+template<typename T, bool N1, bool N2, bool N3>
+struct coffee_details_category<T, false, false, false, true, N1, N2, N3> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Unsigned;
+};
+
+template<typename T, bool N1, bool N2>
+struct coffee_details_category<T, false, false, false, false, true, N1, N2> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Signed;
+};
+
+template<typename T, bool N1>
+struct coffee_details_category<T, false, false, false, false, false, true, N1> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Float;
+};
+
+template<typename T>
+struct coffee_details_category<T, false, false, false, false, false, false, true> {
+	using type = T;
+	static constexpr Runtime::CategoryE value = Runtime::CategoryE::Pointer;
+};
+
+COFFEE_NAMESPACE_END(details)
+template<typename T>
+using category = integral_constant<Runtime::CategoryE, coffee::details::coffee_details_category<T>::value>;
+COFFEE_NAMESPACE_END(Coffee, implement)
+
+/********************************************************************************************************************************************/
+COFFEE_NAMESPACE_BEGIN(Coffee, implement)
+COFFEE_NAMESPACE_BEGIN(details)
+template<typename T
 	, bool = is_float<T>::value
 	, bool = is_unsigned<T>::value
 	, bool = is_signed<T>::value>
@@ -639,6 +705,21 @@ COFFEE_NAMESPACE_END(Coffee, implement)
 /********************************************************************************************************************************************/
 COFFEE_NAMESPACE_BEGIN(Coffee, implement)
 COFFEE_NAMESPACE_BEGIN(details)
+template<typename T1, typename T2>
+struct coffee_details_is_same_category
+	: std::false_type {
+};
+
+
+
+COFFEE_NAMESPACE_END(details)
+template<typename T>
+using is_arithmetic = bool_constant<coffee::details::coffee_details_is_arithmetic<remove_const_reference<T>>::value>;
+COFFEE_NAMESPACE_END(Coffee, implement)
+
+/********************************************************************************************************************************************/
+COFFEE_NAMESPACE_BEGIN(Coffee, implement)
+COFFEE_NAMESPACE_BEGIN(details)
 template<typename T, typename TP, bool = is_abstract<T>::value, typename = void>
 struct coffee_details_is_constructible
 	: false_type {
@@ -664,9 +745,19 @@ struct coffee_details_is_trivially_constructible
 	: std::is_trivially_constructible<T> {
 };
 
+template<typename...Ts>
+struct coffee_details_is_trivially_constructible<type_pack<Ts...>>
+	: constexpr_and<coffee_details_is_trivially_constructible<Ts>::value...> {
+};
+
 template<typename T>
 struct coffee_details_is_trivially_destructible
 	: std::is_trivially_destructible<T> {
+};
+
+template<typename...Ts>
+struct coffee_details_is_trivially_destructible<type_pack<Ts...>>
+	: constexpr_and<coffee_details_is_trivially_destructible<Ts>::value...> {
 };
 
 COFFEE_NAMESPACE_END(details)

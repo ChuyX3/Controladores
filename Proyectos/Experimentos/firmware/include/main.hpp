@@ -51,7 +51,7 @@ namespace Coffee
         static constexpr const char* FIRMWARE_VERSION = "Version 0.1";
 
     private: /* Experiment */
-        enum GPIO{
+        enum GPIO {
             ENCODER_A = 32,
             ENCODER_B = 33,
             MOTOR_ENABLE = 25,
@@ -106,7 +106,6 @@ namespace Coffee
                 stepTimer.reset();
                 sampleCount = 0;
                 leftTime = 0;
-                motor.set(0);
                 motor.start();
                 encoder.write(0);
                 setState(ExperimentState::Running);
@@ -126,6 +125,7 @@ namespace Coffee
                         profileFront.pop();
                         sampleCount = step.first * 1000;
                         motor.set(step.second);
+                        Serial.println("Second value: " + String(step.second));
                     }
                     else {
                         setState(ExperimentState::Stopping);
