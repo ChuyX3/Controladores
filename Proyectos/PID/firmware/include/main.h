@@ -17,7 +17,8 @@
 #pragma once
 #include "entry.h"
 #include "coffee/control/encoder.h"
-#include "motor.h"
+#include "coffee/control/motor.h"
+#include "coffee/collections/array.h"
 
 namespace Coffee
 {
@@ -40,7 +41,8 @@ namespace Coffee
         double lastPosition = 0.0;
         uint64_t leftTime = 0;
         uint64_t sampleCount = 0;
-        std::pair<String, double> sampleData[5];
+
+        StaticArray<std::pair<String, double>, 5> sampleData;
         std::queue<std::pair<uint32_t, double>> profileBack;
         std::queue<std::pair<uint32_t, double>> profileFront;
 
@@ -72,7 +74,6 @@ namespace Coffee
             case ControllerState::Loading:
                 std::swap(profileFront, profileBack);
                 stepTimer.reset();
-                motor.set(0);
                 motor.start();
                 encoder.reset(0);
                 sampleCount = 0;
@@ -109,7 +110,7 @@ namespace Coffee
                     lastPosition = encoder.position();
                     sampleCount++;
 
-                    postNewSample(sampleData, 5);
+                    postNewSample(sampleData.enumerate());
                 });
                 break;
 

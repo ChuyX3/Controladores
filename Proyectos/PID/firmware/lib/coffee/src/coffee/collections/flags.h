@@ -118,11 +118,11 @@ namespace Coffee
             value ? set<I>() : reset<I>();
         }
         
-        static constexpr size_t count()const {
+        constexpr size_t count()const {
             return N;
         }
 
-        static constexpr size_t bytes()const {
+        constexpr size_t bytes()const {
             return numBytes;
         }
 

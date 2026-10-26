@@ -20,6 +20,7 @@
 #include <functional>
 #include <queue>
 #include <vector>
+#include "coffee/collections/arrayview.h"
 
 #include "webserver.h"
 #include "async.h"
@@ -144,22 +145,17 @@ namespace Coffee
         }
 
         void serverSetup(AsyncWebServer& webServer, AsyncEventSource& webEvents) {
-            webServer.on("/start", HTTP_GET, [this](AsyncWebServerRequest* request){ this->onWebServerStart(request); });
-            webServer.on("/stop", HTTP_GET, [this](AsyncWebServerRequest* request){ this->onWebServerStop(request); });
-            //webServer.on("/start", HTTP_POST, [this](AsyncWebServerRequest*){ }, nullptr,
-            //    [this](AsyncWebServerRequest* request, uint8_t *data, size_t len, size_t index, size_t total)
-            //{
-            //    this->onWebServerStart(request, data, len, index, total);
-            //});
-            
+            webServer.on("/start", HTTP_GET, [this](AsyncWebServerRequest* request){ static_cast<self*>(this)->onWebServerStart(request); });
+            webServer.on("/stop", HTTP_GET, [this](AsyncWebServerRequest* request){ static_cast<self*>(this)->onWebServerStop(request); });
         }
 
-        void postNewSample(std::pair<String, double> data[], int count) {
+        template<typename Container>
+        void postNewSample(Enumerator<std::pair<String, double>, Container>const& data) {
             String json;
             JsonDocument doc;
             JsonVariant root = doc.to<JsonVariant>();
-            for(int i = 0; i < count; i++){
-                root[data[i].first] = data[i].second;
+            for(auto const& pair : data) {
+                root[pair.first] = pair.second;
             }
             serializeJson(root, json);
             webServer::webEventSend(json.c_str(), "sample", millis());
