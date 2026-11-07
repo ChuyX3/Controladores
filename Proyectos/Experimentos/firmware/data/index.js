@@ -152,15 +152,14 @@ function finishExperiment()
 function downloadCSV()
 {
     let csv =
-        "t,u,y,y2\r\n";
+        "t,u,y\r\n";
 
     samples.forEach(sample =>
     {
         csv +=
             sample.t + "," +
             sample.u + "," +
-            sample.y + ",";
-            sample.y2 + "\r\n";
+            sample.y + "\r\n";
     });
 
     const blob =
